@@ -15,6 +15,9 @@ class ExecutorAgent:
     TIMEOUT_SECONDS = 10
     NUM_TESTS = 10
 
+    def __init__(self, output_dir: str = "output"):
+        self.output_dir = output_dir
+
     def run_test_generator(self) -> None:
         """
         Run output/test_generator.py using the current Python interpreter.
@@ -23,7 +26,7 @@ class ExecutorAgent:
         """
         print("[ExecutorAgent] Running test generator script...")
         result = subprocess.run(
-            [sys.executable, os.path.join("output", "test_generator.py")],
+            [sys.executable, os.path.join(self.output_dir, "test_generator.py")],
             capture_output=True,
             text=True,
         )
@@ -37,7 +40,7 @@ class ExecutorAgent:
             print(result.stdout, end="")
 
         # Validate that exactly NUM_TESTS input files were created
-        inputs_dir = os.path.join("output", "inputs")
+        inputs_dir = os.path.join(self.output_dir, "inputs")
         created = [
             f for f in os.listdir(inputs_dir)
             if f.startswith("test_") and f.endswith(".txt")
@@ -51,13 +54,13 @@ class ExecutorAgent:
         print(f"[ExecutorAgent] {self.NUM_TESTS} test input files created.")
 
     def compile_solution(self) -> None:
-        """Compile output/solution.cpp with g++ -O2 -std=c++17."""
+        """Compile output/solution.cpp with g++ -O2 -std=c++14 (GCC 6.3.0 compatible)."""
         print("[ExecutorAgent] Compiling solution.cpp...")
         result = subprocess.run(
             [
-                "g++", "-O2", "-std=c++17",
-                "-o", os.path.join("output", "solution"),
-                os.path.join("output", "solution.cpp"),
+                "g++", "-O2", "-std=c++14",
+                "-o", os.path.join(self.output_dir, "solution"),
+                os.path.join(self.output_dir, "solution.cpp"),
             ],
             capture_output=True,
             text=True,
@@ -78,9 +81,9 @@ class ExecutorAgent:
             {"test_num": int, "status": str, "exit_code": int|None, "input": str}
         """
         print("[ExecutorAgent] Running solution against all test cases...")
-        inputs_dir = os.path.join("output", "inputs")
-        outputs_dir = os.path.join("output", "outputs")
-        binary = os.path.join("output", "solution")
+        inputs_dir = os.path.join(self.output_dir, "inputs")
+        outputs_dir = os.path.join(self.output_dir, "outputs")
+        binary = os.path.join(self.output_dir, "solution")
         passed = 0
         failures = []
 

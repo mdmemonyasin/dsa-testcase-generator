@@ -1,0 +1,9 @@
+.git
+.env
+.claude
+output/
+__pycache__
+*.pyc
+*.pyo
+problem.txt
+README.md

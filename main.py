@@ -54,44 +54,32 @@ def read_problem(args: argparse.Namespace) -> str:
     return text
 
 
-def setup_output_dirs() -> None:
-    """Create output directory structure."""
+def run_pipeline(problem_text: str, output_dir: str = "output") -> tuple:
+    """
+    Run the full DSA agent pipeline.
+
+    Returns:
+        (passed, failures, driver_paths) where:
+          - passed: int — number of tests that passed
+          - failures: list of failing test dicts
+          - driver_paths: dict mapping language -> file path
+    """
+    MAX_SOLUTION_RETRIES = 2
+    MAX_TESTGEN_RETRIES = 2
+
+    # Create output directory structure
     for d in [
-        os.path.join("output", "inputs"),
-        os.path.join("output", "outputs"),
+        os.path.join(output_dir, "inputs"),
+        os.path.join(output_dir, "outputs"),
     ]:
         os.makedirs(d, exist_ok=True)
     print("[main] Output directories ready.")
 
-
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="DSA Agent Helper — auto-generate tests and solution for a competitive programming problem."
-    )
-    parser.add_argument(
-        "--problem",
-        metavar="FILE",
-        help="Path to a text file containing the problem statement (default: read from stdin).",
-    )
-    args = parser.parse_args()
-
-    load_dotenv()
-
-    print("=" * 60)
-    print("  DSA Agent Helper")
-    print("=" * 60)
-
-    validate_environment()
-    problem_text = read_problem(args)
-    setup_output_dirs()
-
-    executor = ExecutorAgent()
-    MAX_SOLUTION_RETRIES = 2
-    MAX_TESTGEN_RETRIES = 2
+    executor = ExecutorAgent(output_dir=output_dir)
 
     # Step 1: Generate test cases
     print("\n--- Step 1: Generate Test Cases ---")
-    test_gen_agent = TestGeneratorAgent()
+    test_gen_agent = TestGeneratorAgent(output_dir=output_dir)
     test_gen_agent.run(problem_text)
 
     # Step 2: Run test generator script (with retry on failure)
@@ -105,13 +93,13 @@ def main() -> None:
                 print(f"[main] Test generator failed after {MAX_TESTGEN_RETRIES} retries. Aborting.")
                 raise
             print(f"\n--- Test Generator Retry {attempt + 1}/{MAX_TESTGEN_RETRIES} ---")
-            with open(os.path.join("output", "test_generator.py"), "r") as f:
+            with open(os.path.join(output_dir, "test_generator.py"), "r") as f:
                 current_script = f.read()
             test_gen_agent.retry(problem_text, e.stderr, current_script)
 
     # Step 3: Generate C++ solution
     print("\n--- Step 3: Generate C++ Solution ---")
-    solution_agent = SolutionAgent()
+    solution_agent = SolutionAgent(output_dir=output_dir)
     solution_agent.run(problem_text)
 
     # Step 4: Compile solution
@@ -134,8 +122,35 @@ def main() -> None:
 
     # Step 6: Generate driver code templates
     print("\n--- Step 6: Generate Driver Code Templates ---")
-    driver_agent = DriverCodeAgent()
+    driver_agent = DriverCodeAgent(output_dir=output_dir)
     driver_paths = driver_agent.run(problem_text)
+
+    return passed, failures, driver_paths
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="DSA Agent Helper — auto-generate tests and solution for a competitive programming problem."
+    )
+    parser.add_argument(
+        "--problem",
+        metavar="FILE",
+        help="Path to a text file containing the problem statement (default: read from stdin).",
+    )
+    args = parser.parse_args()
+
+    load_dotenv()
+
+    print("=" * 60)
+    print("  DSA Agent Helper")
+    print("=" * 60)
+
+    validate_environment()
+    problem_text = read_problem(args)
+
+    passed, failures, driver_paths = run_pipeline(problem_text, output_dir="output")
+
+    total = ExecutorAgent.NUM_TESTS
 
     # Final summary
     print("\n" + "=" * 60)

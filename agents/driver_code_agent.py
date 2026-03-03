@@ -51,8 +51,6 @@ def _extract_language_block(response: str, language: str) -> str:
 
 
 class DriverCodeAgent(BaseAgent):
-    OUTPUT_DIR = os.path.join("output", "driver")
-
     LANGUAGES = [
         ("java",   "Main.java"),
         ("cpp",    "driver.cpp"),
@@ -60,13 +58,17 @@ class DriverCodeAgent(BaseAgent):
         ("python", "driver.py"),
     ]
 
+    def __init__(self, output_dir: str = "output"):
+        super().__init__()
+        self.output_dir = os.path.join(output_dir, "driver")
+
     def run(self, problem_text: str) -> dict:
         """
         Generate driver code in Java, C++, C, and Python.
         Returns dict mapping language tag -> file path.
         """
         print("[DriverCodeAgent] Generating driver code for all 4 languages...")
-        os.makedirs(self.OUTPUT_DIR, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
 
         user_prompt = (
             f"Generate driver code in Java, C++, C, and Python for this problem:\n\n"
@@ -82,7 +84,7 @@ class DriverCodeAgent(BaseAgent):
                 print(f"  [DriverCodeAgent] WARNING: {e}")
                 continue
 
-            file_path = os.path.join(self.OUTPUT_DIR, filename)
+            file_path = os.path.join(self.output_dir, filename)
             with open(file_path, "w") as f:
                 f.write(code + "\n")
             paths[lang] = file_path

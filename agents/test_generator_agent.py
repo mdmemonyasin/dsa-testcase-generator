@@ -32,13 +32,17 @@ IMPORTANT:
 
 
 class TestGeneratorAgent(BaseAgent):
+    def __init__(self, output_dir: str = "output"):
+        super().__init__()
+        self.output_dir = output_dir
+
     def run(self, problem_text: str) -> str:
         """Generate test_generator.py from problem text and write it to output/."""
         print("[TestGeneratorAgent] Generating test case generator script...")
         user_prompt = f"Write the test generator script for this problem:\n\n{problem_text}"
         response = self.call_model(SYSTEM_PROMPT, user_prompt)
         code = self.extract_code_block(response, "python")
-        out_path = os.path.join("output", "test_generator.py")
+        out_path = os.path.join(self.output_dir, "test_generator.py")
         with open(out_path, "w") as f:
             f.write(code + "\n")
         print(f"[TestGeneratorAgent] Written to {out_path}")
@@ -62,7 +66,7 @@ class TestGeneratorAgent(BaseAgent):
         )
         response = self.call_model(SYSTEM_PROMPT, user_prompt)
         code = self.extract_code_block(response, "python")
-        out_path = os.path.join("output", "test_generator.py")
+        out_path = os.path.join(self.output_dir, "test_generator.py")
         with open(out_path, "w") as f:
             f.write(code + "\n")
         print(f"[TestGeneratorAgent] Retried script written to {out_path}")
