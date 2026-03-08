@@ -118,6 +118,7 @@ class ExecutorAgent:
                         "status": status,
                         "exit_code": result.returncode,
                         "input": input_content,
+                        "output": output_content,
                     })
                 else:
                     status = "OK"
@@ -139,6 +140,7 @@ class ExecutorAgent:
                     "status": "TLE",
                     "exit_code": None,
                     "input": input_content,
+                    "output": "",
                 })
 
             except Exception as e:
@@ -151,6 +153,7 @@ class ExecutorAgent:
                     "status": f"EXCEPTION: {e}",
                     "exit_code": None,
                     "input": input_content,
+                    "output": "",
                 })
 
         return passed, failures

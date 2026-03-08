@@ -1,42 +1,19 @@
-Problem Statement
-
-You are provided with two arrays, a and b. Your objective is to calculate the total number of unique elements present in their union.
-
-The union of two sets is a new set that comprises all the distinct elements found in either of the original sets. Any duplicate elements across or within the input arrays should be counted only once.
-
-Examples
-
+Given two strings s and p, return an array of all the start indices of p's anagrams in s. You may return the answer in any order.
+ 
 Example 1:
-
-Input: a = [1, 2, 3, 4, 5], b = [1, 2, 3]
-Output: 5
-Explanation: The unique elements from both arrays are 1, 2, 3, 4, and 5. Therefore, the total count is 5.
-
+Input: s = "cbaebabacd", p = "abc"
+Output: [0,6]
+Explanation:
+The substring with start index = 0 is "cba", which is an anagram of "abc".
+The substring with start index = 6 is "bac", which is an anagram of "abc".
 Example 2:
-
-Input: a = [85, 25, 1, 32, 54, 6], b = [85, 2]
-Output: 7
-Explanation: The distinct elements are 85, 25, 1, 32, 54, 6, and 2. The combined unique elements result in a count of 7.
-
-Example 3:
-
-Input: a[] = [1, 2, 1, 1, 2], b[] = [2, 2, 1, 2, 1]
-Output: 2
-Explanation: After considering only unique values from both arrays, the distinct elements are 1 and 2. Thus, the count is 2.
-
-Constraints
-
-
-1 ≤ a.size(), b.size() ≤ 106
-
-
-0 ≤ a[i], b[i] < 105
-
-Custom Input Format
-
-The custom input will consist of two lines. The first line will contain space-separated integers for array a, and the second line will contain space-separated integers for array b.
-
-Example:
-
-1 2 3 4 5
-1 2 3
+Input: s = "abab", p = "ab"
+Output: [0,1,2]
+Explanation:
+The substring with start index = 0 is "ab", which is an anagram of "ab".
+The substring with start index = 1 is "ba", which is an anagram of "ab".
+The substring with start index = 2 is "ab", which is an anagram of "ab".
+ 
+Constraints:
+1 <= s.length, p.length <= 3 * 10^4
+s and p consist of lowercase English letters.

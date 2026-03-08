@@ -7,6 +7,7 @@ from google import genai
 from google.genai import types
 
 MODEL = "gemini-2.0-flash"
+RETRY_MODEL = "gemini-2.5-pro"
 MAX_RETRIES = 2
 
 _client: Optional[genai.Client] = None
@@ -25,21 +26,26 @@ def _get_client() -> genai.Client:
 
 
 class BaseAgent:
-    def call_model(self, system_prompt: str, user_prompt: str) -> str:
+    def call_model(self, system_prompt: str, user_prompt: str, model: str = MODEL, max_output_tokens: int = 8192) -> str:
         """Calls Gemini API, returns response text. Retries on transient errors."""
         client = _get_client()
         config = types.GenerateContentConfig(
             system_instruction=system_prompt,
             temperature=0.2,
-            max_output_tokens=8192,
+            max_output_tokens=max_output_tokens,
         )
         for attempt in range(MAX_RETRIES):
             try:
                 response = client.models.generate_content(
-                    model=MODEL,
+                    model=model,
                     contents=user_prompt,
                     config=config,
                 )
+                if response.text is None:
+                    raise ValueError(
+                        f"Model returned empty response (finish_reason="
+                        f"{response.candidates[0].finish_reason if response.candidates else 'unknown'})"
+                    )
                 return response.text
             except Exception as e:
                 if attempt < MAX_RETRIES - 1:

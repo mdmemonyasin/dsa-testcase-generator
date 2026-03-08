@@ -9,7 +9,7 @@ import urllib.request
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-DEFAULT_TIME_LIMIT = 2.0
+DEFAULT_TIME_LIMIT = 1.0
 
 
 def _post_json(url, payload):
@@ -23,6 +23,8 @@ def _post_json(url, payload):
         logger.info("Callback status: %s", r.status)
 
 
+_INVALID_OUTPUT_MARKERS = ("TLE", "EXCEPTION:", "ERROR")
+
 def _collect_test_cases(output_dir):
     cases = []
     for i in range(1, 11):
@@ -30,9 +32,14 @@ def _collect_test_cases(output_dir):
         out = os.path.join(output_dir, "outputs", f"test_{i}_output.txt")
         if not os.path.exists(inp):
             continue
+        output_content = open(out).read() if os.path.exists(out) else ""
+        stripped = output_content.strip()
+        if any(stripped.startswith(marker) for marker in _INVALID_OUTPUT_MARKERS):
+            logger.warning("Skipping test_%d: output contains error marker (%s)", i, stripped[:20])
+            continue
         cases.append({
             "input": open(inp).read(),
-            "output": open(out).read() if os.path.exists(out) else "",
+            "output": output_content,
             "timeLimit": DEFAULT_TIME_LIMIT
         })
     return cases
@@ -51,6 +58,39 @@ def _collect_driver_codes(output_dir):
         if os.path.exists(os.path.join(driver, f)) else None
         for lang, f in files.items()
     }
+
+
+def push(question_id: str, callback_url: str = None, tenant_id: str = "", output_dir: str = "output"):
+    """
+    Push the current driver codes and test cases for the given questionId.
+
+    Args:
+        question_id:  The question ID to tag the payload with.
+        callback_url: URL to POST the payload to. Falls back to CALLBACK_URL env var.
+        tenant_id:    Optional tenant ID. Falls back to TENANT_ID env var.
+        output_dir:   Path to the output directory (default: 'output').
+    """
+    url = callback_url or os.environ.get("CALLBACK_URL", "")
+    if not url:
+        raise ValueError("callback_url must be provided or CALLBACK_URL env var must be set")
+
+    tenant = tenant_id or os.environ.get("TENANT_ID", "")
+
+    test_cases = _collect_test_cases(output_dir)
+    driver_codes = _collect_driver_codes(output_dir)
+
+    if not test_cases:
+        raise RuntimeError(f"No test cases found in {output_dir}/inputs/")
+
+    payload = {
+        "questionId": question_id,
+        "tenantId": tenant,
+        "testCases": test_cases,
+        "driverCodes": driver_codes,
+    }
+    _post_json(url, payload)
+    print(f"[push] Pushed {len(test_cases)} test case(s) for questionId={question_id}")
+    return payload
 
 
 def handler(event, context):
