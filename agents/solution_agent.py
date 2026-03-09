@@ -71,13 +71,20 @@ class SolutionAgent(BaseAgent):
         cases_text = ""
         for fail in failures:
             actual_output = fail.get("output", "").strip()
-            cases_text += (
-                f"\n--- test_{fail['test_num']} ({fail['status']}) ---\n"
-                f"Input:\n{fail['input'].strip()}\n"
-                f"Actual output:\n{actual_output if actual_output else '(none)'}\n"
-            )
+            if fail.get("status") == "COMPILE_ERROR":
+                cases_text += (
+                    f"\n--- COMPILATION ERROR ---\n"
+                    f"Compiler output:\n{actual_output if actual_output else '(none)'}\n"
+                )
+            else:
+                cases_text += (
+                    f"\n--- test_{fail['test_num']} ({fail['status']}) ---\n"
+                    f"Input:\n{fail['input'].strip()}\n"
+                    f"Actual output:\n{actual_output if actual_output else '(none)'}\n"
+                )
 
         has_tle = any(f.get("status") == "TLE" for f in failures)
+        has_compile_error = any(f.get("status") == "COMPILE_ERROR" for f in failures)
         tle_note = (
             "\nNOTE: One or more test cases hit the time limit (TLE). "
             "Your current solution is too slow — you MUST use a more efficient algorithm. "
@@ -85,12 +92,18 @@ class SolutionAgent(BaseAgent):
             "Do NOT resubmit a brute-force or O(n^2)/O(n^3) approach.\n"
             if has_tle else ""
         )
+        compile_note = (
+            "\nNOTE: The solution FAILED TO COMPILE. Fix all compilation errors before anything else. "
+            "Double-check header includes, syntax, and that no C++17-only features are used.\n"
+            if has_compile_error else ""
+        )
 
         user_prompt = (
             f"The following C++ solution fails on some test cases. "
             f"Analyze the buggy solution and the failing test cases, identify the root cause, "
             f"and rewrite a CORRECT and OPTIMALLY EFFICIENT solution.\n"
-            f"{tle_note}\n"
+            f"{tle_note}"
+            f"{compile_note}\n"
             f"Buggy solution:\n```cpp\n{current_solution}\n```\n\n"
             f"Failing test cases:\n{cases_text}\n"
             f"Problem statement:\n\n{problem_text}"

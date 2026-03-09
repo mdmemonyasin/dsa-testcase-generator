@@ -104,12 +104,23 @@ def run_pipeline(problem_text: str, output_dir: str = "output") -> tuple:
 
     # Step 4: Compile solution
     print("\n--- Step 4: Compile Solution ---")
-    executor.compile_solution()
+    try:
+        executor.compile_solution()
+        passed, failures = executor.run_solution_against_tests()
+    except RuntimeError as e:
+        print(f"[main] Compilation failed — will retry with error context.")
+        passed = 0
+        failures = [{
+            "test_num": 0,
+            "status": "COMPILE_ERROR",
+            "exit_code": None,
+            "input": "",
+            "output": str(e),
+        }]
 
     # Step 5: Run solution against all tests (with retry loop)
     print("\n--- Step 5: Run Solution Against Tests ---")
     total = ExecutorAgent.NUM_TESTS
-    passed, failures = executor.run_solution_against_tests()
 
     for attempt in range(1, MAX_SOLUTION_RETRIES + 1):
         if not failures:
@@ -117,8 +128,19 @@ def run_pipeline(problem_text: str, output_dir: str = "output") -> tuple:
         failing_nums = [f["test_num"] for f in failures]
         print(f"\n--- Retry {attempt}/{MAX_SOLUTION_RETRIES}: Fixing failures on tests {failing_nums} ---")
         solution_agent.retry(problem_text, failures)
-        executor.compile_solution()
-        passed, failures = executor.run_solution_against_tests()
+        try:
+            executor.compile_solution()
+            passed, failures = executor.run_solution_against_tests()
+        except RuntimeError as e:
+            print(f"[main] Compilation failed on retry {attempt}.")
+            passed = 0
+            failures = [{
+                "test_num": 0,
+                "status": "COMPILE_ERROR",
+                "exit_code": None,
+                "input": "",
+                "output": str(e),
+            }]
 
     # Step 6: Generate driver code templates
     print("\n--- Step 6: Generate Driver Code Templates ---")
