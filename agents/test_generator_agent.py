@@ -28,6 +28,9 @@ IMPORTANT:
 - Wrap your entire script in a ```python ... ``` fenced code block
 - The script must run without errors with: python3 output/test_generator.py
 - Do NOT include any explanation outside the code block
+- Every input file MUST satisfy the problem constraints exactly (e.g. if min size is 1, never write an empty file)
+- For problems with boolean/yes-no outputs, the 10 test cases MUST include a mix — at least 4 that produce
+  a TRUE/YES result and at least 4 that produce a FALSE/NO result, so both code paths are exercised
 """
 
 

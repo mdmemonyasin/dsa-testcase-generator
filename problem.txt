@@ -1,19 +1,30 @@
-Given two strings s and p, return an array of all the start indices of p's anagrams in s. You may return the answer in any order.
- 
-Example 1:
-Input: s = "cbaebabacd", p = "abc"
-Output: [0,6]
-Explanation:
-The substring with start index = 0 is "cba", which is an anagram of "abc".
-The substring with start index = 6 is "bac", which is an anagram of "abc".
-Example 2:
-Input: s = "abab", p = "ab"
-Output: [0,1,2]
-Explanation:
-The substring with start index = 0 is "ab", which is an anagram of "ab".
-The substring with start index = 1 is "ba", which is an anagram of "ab".
-The substring with start index = 2 is "ab", which is an anagram of "ab".
- 
+Given an input string s, your objective is to verify whether it qualifies as a palindrome. A palindrome is defined as a sequence of characters that reads identically from left to right as it does from right to left.
+
+Examples:
+
+Input: s = "abba"
+Output: true
+Explanation: "abba" reads the same forwards and backwards, so it is a palindrome.
+
+Input: s = "abc"
+Output: false
+Explanation: "abc" does not read the same forwards and backwards, so it is not a palindrome.
+
+Input: s = "a"
+Output: true
+Explanation: A single-character string is always a palindrome.
+
+Input: s = "acbca"
+Output: true
+Explanation: "acbca" reads the same forwards and backwards, so it is a palindrome.
+
 Constraints:
-1 <= s.length, p.length <= 3 * 10^4
-s and p consist of lowercase English letters.
+1 ≤ s.size() ≤ 106
+The string s contains only lowercase letters (a-z).
+
+Input Format:
+
+The input consists of a single line containing the string s.
+
+Example:
+abba

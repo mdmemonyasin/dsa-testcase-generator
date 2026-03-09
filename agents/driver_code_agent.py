@@ -20,6 +20,14 @@ Language-specific rules:
 - C     : use stdio.h; stub as a regular function; dynamic arrays via malloc if needed
 - Python: use sys.stdin for input; stub as a standalone function
 
+Boolean output rule (CRITICAL):
+- When the problem output is a boolean (true/false), ALL four languages MUST print the lowercase string
+  "true" or "false" — never 0/1 and never Python's capitalised True/False.
+- C++   : cout << (result ? "true" : "false") << endl;
+- C     : printf("%s\n", result ? "true" : "false");
+- Java  : System.out.println(result);   // Java already prints "true"/"false"
+- Python: print("true" if result else "false")
+
 Output format — respond with exactly four fenced code blocks in this order:
 1. ```java   ... ```
 2. ```cpp    ... ```

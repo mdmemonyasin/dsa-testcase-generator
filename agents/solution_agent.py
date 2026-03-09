@@ -4,16 +4,18 @@ from .base_agent import BaseAgent, RETRY_MODEL
 SYSTEM_PROMPT = """\
 You are an expert competitive programmer writing production-quality C++ solutions compatible with GCC 6.3.0.
 
-Your task is to write a CORRECT and OPTIMALLY EFFICIENT C++ solution for a given DSA problem.
+Your task is to produce the COMPLETE, RUNNABLE solution.cpp by taking the provided C++ driver code and
+REPLACING the stub function body with a correct, optimally efficient implementation.
 
 STRICT RULES:
-1. Do NOT use #include <bits/stdc++.h> — it is not available on Apple clang without special setup
-2. Use ONLY explicit, standard headers (e.g., <iostream>, <vector>, <algorithm>, <string>, etc.)
-3. Read ALL input from std::cin; write ALL output to std::cout
-4. Must compile cleanly with: g++ -O2 -std=c++14 -o output/solution output/solution.cpp
-5. No debug output, no test harnesses, no file I/O — stdin/stdout only
-6. Handle ALL edge cases described in the problem constraints
-7. GCC 6.3.0 COMPATIBILITY — do NOT use any of the following C++17 features:
+1. Start from the driver code exactly — keep all I/O, main(), and output formatting unchanged
+2. Only fill in the stub function(s) with the real algorithm; do NOT restructure main() or change output calls
+3. Do NOT use #include <bits/stdc++.h> — it is not available on Apple clang without special setup
+4. Use ONLY explicit, standard headers (e.g., <iostream>, <vector>, <algorithm>, <string>, etc.)
+5. Must compile cleanly with: g++ -O2 -std=c++14 -o output/solution output/solution.cpp
+6. No debug output, no test harnesses, no file I/O — stdin/stdout only
+7. Handle ALL edge cases described in the problem constraints
+8. GCC 6.3.0 COMPATIBILITY — do NOT use any of the following C++17 features:
    - std::optional, std::variant, std::any
    - if constexpr, structured bindings (auto [a, b] = ...)
    - std::string_view, std::filesystem
@@ -39,10 +41,27 @@ class SolutionAgent(BaseAgent):
         super().__init__()
         self.output_dir = output_dir
 
+    def _load_driver_cpp(self) -> str:
+        driver_path = os.path.join(self.output_dir, "driver", "driver.cpp")
+        try:
+            with open(driver_path, "r") as f:
+                return f.read()
+        except OSError:
+            return ""
+
     def run(self, problem_text: str) -> str:
-        """Generate solution.cpp from problem text and write it to output/."""
+        """Generate solution.cpp by filling in the driver.cpp stub."""
         print("[SolutionAgent] Generating C++ solution...")
-        user_prompt = f"Write the C++ solution for this problem:\n\n{problem_text}"
+        driver_code = self._load_driver_cpp()
+        driver_section = (
+            f"C++ driver code (keep all I/O and main() unchanged — only implement the stub):\n"
+            f"```cpp\n{driver_code}\n```\n\n"
+            if driver_code else ""
+        )
+        user_prompt = (
+            f"{driver_section}"
+            f"Problem statement:\n\n{problem_text}"
+        )
         response = self.call_model(SYSTEM_PROMPT, user_prompt)
         code = self.extract_code_block(response, "cpp")
         out_path = os.path.join(self.output_dir, "solution.cpp")
@@ -98,12 +117,19 @@ class SolutionAgent(BaseAgent):
             if has_compile_error else ""
         )
 
+        driver_code = self._load_driver_cpp()
+        driver_section = (
+            f"Original driver code (keep all I/O and main() unchanged):\n"
+            f"```cpp\n{driver_code}\n```\n\n"
+            if driver_code else ""
+        )
         user_prompt = (
             f"The following C++ solution fails on some test cases. "
             f"Analyze the buggy solution and the failing test cases, identify the root cause, "
             f"and rewrite a CORRECT and OPTIMALLY EFFICIENT solution.\n"
             f"{tle_note}"
             f"{compile_note}\n"
+            f"{driver_section}"
             f"Buggy solution:\n```cpp\n{current_solution}\n```\n\n"
             f"Failing test cases:\n{cases_text}\n"
             f"Problem statement:\n\n{problem_text}"

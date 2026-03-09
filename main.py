@@ -97,13 +97,18 @@ def run_pipeline(problem_text: str, output_dir: str = "output") -> tuple:
                 current_script = f.read()
             test_gen_agent.retry(problem_text, e.stderr, current_script)
 
-    # Step 3: Generate C++ solution
-    print("\n--- Step 3: Generate C++ Solution ---")
+    # Step 3: Generate driver code templates
+    print("\n--- Step 3: Generate Driver Code Templates ---")
+    driver_agent = DriverCodeAgent(output_dir=output_dir)
+    driver_paths = driver_agent.run(problem_text)
+
+    # Step 4: Generate C++ solution (based on driver.cpp stub)
+    print("\n--- Step 4: Generate C++ Solution ---")
     solution_agent = SolutionAgent(output_dir=output_dir)
     solution_agent.run(problem_text)
 
-    # Step 4: Compile solution
-    print("\n--- Step 4: Compile Solution ---")
+    # Step 5: Compile solution
+    print("\n--- Step 5: Compile Solution ---")
     try:
         executor.compile_solution()
         passed, failures = executor.run_solution_against_tests()
@@ -118,8 +123,8 @@ def run_pipeline(problem_text: str, output_dir: str = "output") -> tuple:
             "output": str(e),
         }]
 
-    # Step 5: Run solution against all tests (with retry loop)
-    print("\n--- Step 5: Run Solution Against Tests ---")
+    # Step 6: Run solution against all tests (with retry loop)
+    print("\n--- Step 6: Run Solution Against Tests ---")
     total = ExecutorAgent.NUM_TESTS
 
     for attempt in range(1, MAX_SOLUTION_RETRIES + 1):
@@ -141,11 +146,6 @@ def run_pipeline(problem_text: str, output_dir: str = "output") -> tuple:
                 "input": "",
                 "output": str(e),
             }]
-
-    # Step 6: Generate driver code templates
-    print("\n--- Step 6: Generate Driver Code Templates ---")
-    driver_agent = DriverCodeAgent(output_dir=output_dir)
-    driver_paths = driver_agent.run(problem_text)
 
     return passed, failures, driver_paths
 
