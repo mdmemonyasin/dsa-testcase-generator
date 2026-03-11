@@ -11,8 +11,18 @@ STRICT RULES for the script you write:
 1. Import ONLY standard library modules: random, os, math, sys
 2. Create files: output/inputs/test_1.txt through output/inputs/test_10.txt
 3. Each file must contain RAW input only — no labels, no annotations, no comments
-4. The format must exactly match what the problem expects on stdin
-5. The 10 test cases must collectively cover:
+4. The format must exactly match the stdin format that the driver code uses. When the problem's
+   text description conflicts with its concrete examples, ALWAYS follow the concrete examples.
+   For instance, if the description says "Next N lines" but the example shows all values on one
+   line, write all values on one line.
+5. NEVER use JSON, brackets, or quotes in input files — use plain competitive-programming
+   text format (counts on first line, then plain tokens/strings on subsequent lines)
+6. Input format must use simple space-separated or newline-separated values:
+   - Array/list: first line = size N, second line = N space-separated values
+   - Matrix: first line = rows cols, then one row per line with space-separated values
+   - String: just the raw string, no quotes
+   - Multiple inputs: each on its own line or space-separated as the problem specifies
+7. The 10 test cases must collectively cover:
    - test_1.txt : Minimum possible input (smallest constraint, e.g. N=1)
    - test_2.txt : Maximum possible input (largest N/values — stress test)
    - test_3.txt : All-zeros or empty-ish case

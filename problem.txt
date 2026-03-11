@@ -1,30 +1,44 @@
-Given an input string s, your objective is to verify whether it qualifies as a palindrome. A palindrome is defined as a sequence of characters that reads identically from left to right as it does from right to left.
+=You are given the root of a binary tree containing n nodes. 
+Your objective is to perform a level order traversal of this tree. 
+Level order traversal involves visiting all nodes at each level from left to right before moving to the next level. 
+This method is also known as a breadth-first traversal.
 
 Examples:
 
-Input: s = "abba"
-Output: true
-Explanation: "abba" reads the same forwards and backwards, so it is a palindrome.
+Input:
+3
+1 2 3
 
-Input: s = "abc"
-Output: false
-Explanation: "abc" does not read the same forwards and backwards, so it is not a palindrome.
 
-Input: s = "a"
-Output: true
-Explanation: A single-character string is always a palindrome.
+Output:
+1
+2 3
 
-Input: s = "acbca"
-Output: true
-Explanation: "acbca" reads the same forwards and backwards, so it is a palindrome.
+Input:
+5
+10 20 30 40 50
+
+
+Output:
+10
+20 30
+40 50
+
+Input:
+9
+1 3 2 N N N 4 6 5
+
+
+Output:
+1 
+3 2 
+4 
+6 5
 
 Constraints:
-1 ≤ s.size() ≤ 106
-The string s contains only lowercase letters (a-z).
+1 ≤ number of nodes ≤ 105
+0 ≤ node->data ≤ 109
 
-Input Format:
-
-The input consists of a single line containing the string s.
-
-Example:
-abba
+Input Format:
+- First Line will have N - Size of an Array
+- Next N lines will have space separated nodes

@@ -105,7 +105,8 @@ def handler(event, context):
     output_dir = tempfile.mkdtemp(prefix=f"dsa_{question_id}_")
     try:
         from main import run_pipeline
-        run_pipeline(problem_text=question_text, output_dir=output_dir)
+        run_pipeline(problem_text=question_text, output_dir=output_dir,
+                     lang_available={"cpp": True, "java": False, "python": False})
 
         test_cases = _collect_test_cases(output_dir)
         driver_codes = _collect_driver_codes(output_dir)

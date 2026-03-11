@@ -3,54 +3,74 @@ import re
 import time
 from typing import Optional
 
-from google import genai
-from google.genai import types
+import anthropic
 
-MODEL = "gemini-2.0-flash"
-RETRY_MODEL = "gemini-2.5-pro"
+MODEL = "claude-sonnet-4-6"
+RETRY_MODEL = "claude-opus-4-6"
 MAX_RETRIES = 2
 
-_client: Optional[genai.Client] = None
+_client: Optional[anthropic.Anthropic] = None
 
 
-def _get_client() -> genai.Client:
+def _get_client() -> anthropic.Anthropic:
     global _client
     if _client is None:
-        api_key = os.environ.get("GEMINI_API_KEY")
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise EnvironmentError(
-                "GEMINI_API_KEY not set. Add it to your .env file or environment."
+                "ANTHROPIC_API_KEY not set. Add it to your .env file or environment."
             )
-        _client = genai.Client(api_key=api_key)
+        _client = anthropic.Anthropic(api_key=api_key)
     return _client
 
 
 class BaseAgent:
-    def call_model(self, system_prompt: str, user_prompt: str, model: str = MODEL, max_output_tokens: int = 8192) -> str:
-        """Calls Gemini API, returns response text. Retries on transient errors."""
+    def call_model(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: str = MODEL,
+        max_output_tokens: int = 8192,
+    ) -> str:
+        """Calls Anthropic API via streaming, returns full response text. Retries on transient errors."""
         client = _get_client()
-        config = types.GenerateContentConfig(
-            system_instruction=system_prompt,
-            temperature=0.2,
-            max_output_tokens=max_output_tokens,
-        )
         for attempt in range(MAX_RETRIES):
             try:
-                response = client.models.generate_content(
+                with client.messages.stream(
                     model=model,
-                    contents=user_prompt,
-                    config=config,
+                    max_tokens=max_output_tokens,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                ) as stream:
+                    final = stream.get_final_message()
+
+                text = next(
+                    (b.text for b in final.content if b.type == "text"), None
                 )
-                if response.text is None:
+                if text is None:
                     raise ValueError(
-                        f"Model returned empty response (finish_reason="
-                        f"{response.candidates[0].finish_reason if response.candidates else 'unknown'})"
+                        f"Model returned no text content "
+                        f"(stop_reason={final.stop_reason})"
                     )
-                return response.text
-            except Exception as e:
+                return text
+
+            except anthropic.RateLimitError as e:
                 if attempt < MAX_RETRIES - 1:
-                    print(f"[BaseAgent] Error: {e}. Retrying in 3s...")
-                    time.sleep(3)
+                    wait = int(e.response.headers.get("retry-after", "10"))
+                    print(f"[BaseAgent] Rate limited. Retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise
+            except anthropic.APIStatusError as e:
+                if e.status_code >= 500 and attempt < MAX_RETRIES - 1:
+                    print(f"[BaseAgent] Server error {e.status_code}. Retrying in 5s...")
+                    time.sleep(5)
+                else:
+                    raise
+            except anthropic.APIConnectionError:
+                if attempt < MAX_RETRIES - 1:
+                    print("[BaseAgent] Connection error. Retrying in 5s...")
+                    time.sleep(5)
                 else:
                     raise
 
