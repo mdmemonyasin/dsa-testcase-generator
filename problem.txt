@@ -1,44 +1,51 @@
-=You are given the root of a binary tree containing n nodes. 
-Your objective is to perform a level order traversal of this tree. 
-Level order traversal involves visiting all nodes at each level from left to right before moving to the next level. 
-This method is also known as a breadth-first traversal.
+Problem Statement
+Given an N x N chessboard and the position of a Knight, find the minimum number of moves required for the Knight to reach the given target position.
+The knight moves in a standard chess L-shape:
+2 steps in one direction and 1 step perpendicular to it.
+The positions are given using 1-based indexing.
+If the knight is already at the target position, return 0.
 
 Examples:
 
 Input:
-3
-1 2 3
+n = 3
+knightPos[] = [3, 3]
+targetPos[]= [1, 2]
 
+Output: 1
 
-Output:
-1
-2 3
-
-Input:
-5
-10 20 30 40 50
-
-
-Output:
-10
-20 30
-40 50
+Explanation:
+The knight requires just one move to travel from (3, 3) to (1, 2).
 
 Input:
-9
-1 3 2 N N N 4 6 5
+n = 6
+knightPos[] = [4, 5]
+targetPos[] = [1, 1]
+Output: 3
 
+Explanation:
 
-Output:
-1 
-3 2 
-4 
-6 5
+The knight needs 3 moves to reach (1, 1) from (4, 5):
+(4, 5) -> (5, 3) -> (3, 2) -> (1, 1).
 
 Constraints:
-1 ≤ number of nodes ≤ 105
-0 ≤ node->data ≤ 109
+1 ≤ N ≤ 1000
+1 ≤ X, Y ≤ N
+1 ≤ TX, TY ≤ N
 
-Input Format:
-- First Line will have N - Size of an Array
-- Next N lines will have space separated nodes
+Custom Input Format:
+
+The first line of input should contain the integer N.
+The second line should contain the X and Y coordinates of the knight's starting position.
+The third line should contain the TX and TY coordinates of the target position.
+
+Example:
+6
+4 5
+1 1
+
+Output Format:
+Print a single integer — the minimum number of moves required.
+
+Example:
+3
