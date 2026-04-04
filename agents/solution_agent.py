@@ -50,6 +50,8 @@ STRICT RULES:
 3. The public class MUST be named `Main`
 4. Must compile cleanly with: javac Main.java
 5. No debug output, no test harnesses, no file I/O — stdin/stdout only
+5a. NEVER use Scanner for input — it is too slow for large inputs and will be killed with OOM/TLE.
+    The driver already uses BufferedReader + StreamTokenizer; keep that pattern exactly.
 6. Handle ALL edge cases described in the problem constraints
 7. OUTPUT FORMAT (CRITICAL): Print results as plain space-separated values on a single line.
    NEVER use Arrays.toString(), List.toString(), Collection.toString(), or any method that produces

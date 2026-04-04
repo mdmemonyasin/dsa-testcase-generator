@@ -32,7 +32,15 @@ Input format rules (CRITICAL):
   example explicitly shows that layout.
 
 Language-specific rules:
-- Java  : public class MUST be named `Main`; always include `import java.util.*;` at the top; use Scanner for input; stub inside a `Solution` inner class
+- Java  : public class MUST be named `Main`; always include `import java.util.*; import java.io.*;` at the top; use BufferedReader + StreamTokenizer for fast input (NEVER Scanner — it is too slow for large inputs and will be killed); stub inside a `Solution` inner class. Fast I/O boilerplate:
+  ```
+  BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+  StreamTokenizer st = new StreamTokenizer(br);
+  // read an int:  st.nextToken(); int x = (int) st.nval;
+  // read a string token:  st.nextToken(); String s = st.sval;
+  // read a double:  st.nextToken(); double d = st.nval;
+  ```
+  Always use this pattern — never Scanner.
 - C++   : always start with `#include <bits/stdc++.h>` and `using namespace std;`; NEVER use `std::` prefix anywhere — use plain `cout`, `cin`, `vector`, `string`, etc.; stub as a free function or class method
 - C     : use stdio.h; stub as a regular function; dynamic arrays via malloc if needed
 - Python: use sys.stdin for input; stub as a standalone function
