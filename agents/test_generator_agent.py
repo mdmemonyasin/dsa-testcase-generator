@@ -34,6 +34,15 @@ STRICT RULES for the script you write:
    - test_9.txt : Random average-case input #1
    - test_10.txt: Off-by-one boundary condition
 
+CONSTRAINTS-DRIVEN TEST DESIGN (CRITICAL):
+- Read the "Constraints" section of the problem statement carefully BEFORE writing the script.
+- Parse every numeric bound (e.g. 1 ≤ N ≤ 10^5, -10^9 ≤ a[i] ≤ 10^9) and use those EXACT bounds in
+  your generator — do NOT invent looser or tighter limits.
+- test_1.txt must use the LOWER bound of every constraint (e.g. N = min allowed).
+- test_2.txt must use the UPPER bound of every constraint (e.g. N = max allowed, values at max magnitude).
+- Other tests must stay strictly within the constraint ranges; never emit a value the problem disallows.
+- If the problem allows negative values, at least one test must use them; if it forbids them, none should.
+
 IMPORTANT:
 - Wrap your entire script in a ```python ... ``` fenced code block
 - The script must run without errors with: python3 output/test_generator.py

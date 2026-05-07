@@ -5,7 +5,8 @@ from typing import Optional
 
 import anthropic
 
-MODEL = "claude-sonnet-4-6"
+MODEL = "claude-opus-4-7"
+FALLBACK_MODEL = "claude-sonnet-4-6"
 RETRY_MODEL = "claude-opus-4-6"
 MAX_RETRIES = 2
 
@@ -25,14 +26,14 @@ def _get_client() -> anthropic.Anthropic:
 
 
 class BaseAgent:
-    def call_model(
+    def _attempt_with_model(
         self,
+        model: str,
         system_prompt: str,
         user_prompt: str,
-        model: str = MODEL,
-        max_output_tokens: int = 8192,
+        max_output_tokens: int,
     ) -> str:
-        """Calls Anthropic API via streaming, returns full response text. Retries on transient errors."""
+        """Single-model invocation with internal retries on transient errors."""
         client = _get_client()
         for attempt in range(MAX_RETRIES):
             try:
@@ -57,22 +58,45 @@ class BaseAgent:
             except anthropic.RateLimitError as e:
                 if attempt < MAX_RETRIES - 1:
                     wait = int(e.response.headers.get("retry-after", "10"))
-                    print(f"[BaseAgent] Rate limited. Retrying in {wait}s...")
+                    print(f"[BaseAgent] {model} rate limited. Retrying in {wait}s...")
                     time.sleep(wait)
                 else:
                     raise
             except anthropic.APIStatusError as e:
                 if e.status_code >= 500 and attempt < MAX_RETRIES - 1:
-                    print(f"[BaseAgent] Server error {e.status_code}. Retrying in 5s...")
+                    print(f"[BaseAgent] {model} server error {e.status_code}. Retrying in 5s...")
                     time.sleep(5)
                 else:
                     raise
             except anthropic.APIConnectionError:
                 if attempt < MAX_RETRIES - 1:
-                    print("[BaseAgent] Connection error. Retrying in 5s...")
+                    print(f"[BaseAgent] {model} connection error. Retrying in 5s...")
                     time.sleep(5)
                 else:
                     raise
+
+    def call_model(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: str = MODEL,
+        max_output_tokens: int = 8192,
+    ) -> str:
+        """
+        Calls Anthropic API via streaming, returns full response text.
+        Uses the latest Opus (`MODEL`) by default; on persistent API errors,
+        falls back once to `FALLBACK_MODEL`.
+        """
+        try:
+            return self._attempt_with_model(model, system_prompt, user_prompt, max_output_tokens)
+        except (anthropic.RateLimitError, anthropic.APIStatusError, anthropic.APIConnectionError) as e:
+            if model == FALLBACK_MODEL:
+                raise
+            print(
+                f"[BaseAgent] Primary model {model} failed after {MAX_RETRIES} attempts ({type(e).__name__}). "
+                f"Falling back to {FALLBACK_MODEL}..."
+            )
+            return self._attempt_with_model(FALLBACK_MODEL, system_prompt, user_prompt, max_output_tokens)
 
     def extract_code_block(self, response: str, language: str) -> str:
         """

@@ -18,6 +18,7 @@ from agents.test_generator_agent import TestGeneratorAgent
 from agents.solution_agent import SolutionAgent
 from agents.executor_agent import ExecutorAgent, TestGeneratorError
 from agents.driver_code_agent import DriverCodeAgent
+from agents.problem_validator_agent import ProblemValidatorAgent
 
 
 LANGUAGES = ["cpp", "java", "python"]
@@ -60,13 +61,14 @@ def validate_environment() -> dict:
 
 def read_problem(args: argparse.Namespace) -> str:
     """Read problem text from --problem file or stdin."""
-    if args.problem:
-        if not os.path.exists(args.problem):
-            print(f"[ERROR] Problem file not found: {args.problem}")
-            sys.exit(1)
+    if args.problem and os.path.exists(args.problem):
         with open(args.problem, "r") as f:
             text = f.read().strip()
         print(f"[main] Problem loaded from: {args.problem}")
+    elif args.problem and args.problem != "problem.txt":
+        # Explicitly specified file that doesn't exist
+        print(f"[ERROR] Problem file not found: {args.problem}")
+        sys.exit(1)
     else:
         print("[main] Reading problem from stdin (Ctrl+D to finish)...")
         text = sys.stdin.read().strip()
@@ -75,6 +77,53 @@ def read_problem(args: argparse.Namespace) -> str:
         print("[ERROR] Problem text is empty.")
         sys.exit(1)
     return text
+
+
+def read_topics(path: str) -> list:
+    """
+    Read topic tags from `path` (one per line, '#' lines and blanks ignored).
+    Missing file → empty list with a warning. Empty list → warn but don't abort.
+    """
+    if not os.path.exists(path):
+        print(f"[main] [WARN] Topics file not found: {path}. Proceeding without topic hints.")
+        return []
+    tags = []
+    with open(path, "r") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            for token in line.split(","):
+                token = token.strip()
+                if token:
+                    tags.append(token)
+    if not tags:
+        print(f"[main] [WARN] {path} has no active tags. Proceeding without topic hints.")
+    else:
+        print(f"[main] Topic tags loaded ({len(tags)}): {', '.join(tags)}")
+    return tags
+
+
+def validate_problem(problem_text: str) -> None:
+    """
+    Step 0: gate the pipeline on a well-formed problem statement.
+    Aborts the process with a non-zero exit code if the validator finds defects.
+    """
+    print("\n--- Step 0: Validate Problem Statement ---")
+    result = ProblemValidatorAgent().run(problem_text)
+    if result.valid:
+        print(f"[main] Problem statement OK. {result.summary}")
+        return
+
+    print("[ERROR] Problem statement failed validation.")
+    if result.summary:
+        print(f"  Summary: {result.summary}")
+    if result.issues:
+        print("  Issues:")
+        for i, issue in enumerate(result.issues, 1):
+            print(f"    {i}. {issue}")
+    print("\nFix the problem statement (constraints, input/output format, examples) and re-run.")
+    sys.exit(1)
 
 
 # Languages that only generate code (no compile/run)
@@ -142,7 +191,7 @@ def _run_language_pipeline(
     return passed, failures
 
 
-def run_pipeline(problem_text: str, output_dir: str = "output", lang_available: dict = None) -> dict:
+def run_pipeline(problem_text: str, output_dir: str = "output", lang_available: dict = None, topics: list = None) -> dict:
     """
     Run the full DSA agent pipeline for all available languages.
 
@@ -194,7 +243,7 @@ def run_pipeline(problem_text: str, output_dir: str = "output", lang_available: 
 
     # Step 4: Run solution pipeline for each available language
     # C++ runs first as ground truth; Java/Python compare against C++ outputs
-    solution_agent = SolutionAgent(output_dir=output_dir)
+    solution_agent = SolutionAgent(output_dir=output_dir, topics=topics)
     results = {}
     cpp_outputs_dir = os.path.join(output_dir, "outputs")
 
@@ -238,7 +287,14 @@ def main() -> None:
     parser.add_argument(
         "--problem",
         metavar="FILE",
-        help="Path to a text file containing the problem statement (default: read from stdin).",
+        default="problem.txt",
+        help="Path to a text file containing the problem statement (default: problem.txt).",
+    )
+    parser.add_argument(
+        "--topics",
+        metavar="FILE",
+        default="topics.txt",
+        help="Path to a text file with topic tags (one per line). Default: topics.txt.",
     )
     args = parser.parse_args()
 
@@ -250,8 +306,16 @@ def main() -> None:
 
     lang_available = validate_environment()
     problem_text = read_problem(args)
+    topics = read_topics(args.topics)
 
-    results = run_pipeline(problem_text, output_dir="output", lang_available=lang_available)
+    validate_problem(problem_text)
+
+    results = run_pipeline(
+        problem_text,
+        output_dir="output",
+        lang_available=lang_available,
+        topics=topics,
+    )
 
     total = ExecutorAgent.NUM_TESTS
 

@@ -26,6 +26,18 @@ STRICT RULES:
    - __has_include or any C++17-only standard library headers
    Stick to C++14 and below only.
 
+CONSTRAINTS-AWARE TYPE SELECTION (CRITICAL):
+- Read the "Constraints" section of the problem statement carefully.
+- For every intermediate and final value, compute the WORST-CASE magnitude from the constraints
+  and pick a type wide enough to hold it without overflow:
+    * int (32-bit signed):       up to ~2.1 × 10^9
+    * long long (64-bit signed): up to ~9.2 × 10^18
+    * __int128 / arbitrary-precision: anything larger
+- Examples of pitfalls to check: sums of N values, products, factorials, divisor counts,
+  combinatorial counts, prefix sums — any of these can blow past int even when N is small.
+- If the result can exceed 64-bit, use __int128 or string-based big integers; do NOT silently truncate.
+- Validate that the algorithm correctly handles BOTH the lower AND upper bound of every constraint range.
+
 COMPLEXITY REQUIREMENTS (CRITICAL):
 - If the problem states an Expected Time Complexity, your solution MUST match it exactly.
 - If the problem states an Expected Space Complexity, your solution MUST match it exactly.
@@ -74,6 +86,18 @@ STRICT RULES:
    Booleans: print lowercase "true"/"false".
    Strings: print without quotes.
 
+CONSTRAINTS-AWARE TYPE SELECTION (CRITICAL):
+- Read the "Constraints" section of the problem statement carefully.
+- For every intermediate and final value, compute the WORST-CASE magnitude from the constraints
+  and pick a type wide enough to hold it without overflow:
+    * int (32-bit signed):  up to ~2.1 × 10^9
+    * long (64-bit signed): up to ~9.2 × 10^18
+    * java.math.BigInteger: anything larger
+- Examples of pitfalls to check: sums of N values, products, factorials, divisor counts,
+  combinatorial counts, prefix sums — any of these can blow past int even when N is small.
+- If the result can exceed 64-bit, use BigInteger; do NOT silently truncate to long.
+- Validate that the algorithm correctly handles BOTH the lower AND upper bound of every constraint range.
+
 COMPLEXITY REQUIREMENTS (CRITICAL):
 - If the problem states an Expected Time Complexity, your solution MUST match it exactly.
 - If the problem states an Expected Space Complexity, your solution MUST match it exactly.
@@ -104,6 +128,14 @@ STRICT RULES:
    For 2D lists, loop and print(*row) for each row.
    Booleans: print "true" or "false" (lowercase), NOT Python's True/False.
    Strings: print without quotes.
+
+CONSTRAINTS-AWARE CORRECTNESS (CRITICAL):
+- Read the "Constraints" section of the problem statement carefully.
+- Python ints are arbitrary precision, so overflow is not a concern — but you MUST still validate
+  that the algorithm correctly handles BOTH the lower AND upper bound of every constraint range.
+- Pay special attention to edge cases the constraints permit: minimum N, maximum N, zero values,
+  negative values (if allowed), single-element inputs, and any other boundary the constraints expose.
+- Reason about the worst-case input size to ensure the chosen algorithm finishes within time limits.
 
 COMPLEXITY REQUIREMENTS (CRITICAL):
 - If the problem states an Expected Time Complexity, your solution MUST match it exactly.
@@ -142,9 +174,21 @@ LANG_CONFIG = {
 
 
 class SolutionAgent(BaseAgent):
-    def __init__(self, output_dir: str = "output"):
+    def __init__(self, output_dir: str = "output", topics: list = None):
         super().__init__()
         self.output_dir = output_dir
+        self.topics = list(topics) if topics else []
+
+    def _topics_section(self) -> str:
+        if not self.topics:
+            return ""
+        bullet_list = "\n".join(f"- {t}" for t in self.topics)
+        return (
+            "Topic tags (chosen by the user — use these to pick the correct algorithmic "
+            "approach; e.g. a 'number-theory' tag rules out brute force in favor of "
+            "sieves / modular arithmetic / prime factorization):\n"
+            f"{bullet_list}\n\n"
+        )
 
     def _load_driver(self, lang: str) -> str:
         cfg = LANG_CONFIG[lang]
@@ -192,6 +236,7 @@ class SolutionAgent(BaseAgent):
         user_prompt = (
             f"{driver_section}"
             f"{cpp_ref_section}"
+            f"{self._topics_section()}"
             f"Problem statement:\n\n{problem_text}"
         )
         response = self.call_model(cfg["system_prompt"], user_prompt)
@@ -292,6 +337,7 @@ class SolutionAgent(BaseAgent):
             f"{wa_note}\n"
             f"{cpp_ref_section}"
             f"{driver_section}"
+            f"{self._topics_section()}"
             f"Buggy solution:\n```{cfg['code_tag']}\n{current_solution}\n```\n\n"
             f"Failing test cases:\n{cases_text}\n"
             f"Problem statement:\n\n{problem_text}"

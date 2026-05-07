@@ -1,0 +1,22 @@
+# DSA Topic Tags
+#
+# Add one tag per line. Lines that are blank or start with '#' are ignored.
+# These tags are passed to the solution agent as hints for picking the right
+# algorithm (e.g. "number-theory" steers it toward modular arithmetic / sieves
+# instead of brute force).
+#
+# Common tags:
+#   array, string, hashing, two-pointers, sliding-window
+#   sorting, binary-search, prefix-sum, bit-manipulation
+#   dynamic-programming, greedy, recursion, backtracking
+#   graph, bfs, dfs, shortest-path, mst, topological-sort
+#   tree, binary-tree, bst, trie, segment-tree, fenwick-tree
+#   number-theory, combinatorics, factorials, primes, modular-arithmetic
+#   stack, queue, heap, linked-list, disjoint-set
+#
+# Replace the lines below with the tags relevant to your current problem.
+
+number-theory
+factorials
+divisor-counting
+prime-factorization
