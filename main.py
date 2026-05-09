@@ -18,7 +18,6 @@ from agents.test_generator_agent import TestGeneratorAgent
 from agents.solution_agent import SolutionAgent
 from agents.executor_agent import ExecutorAgent, TestGeneratorError
 from agents.driver_code_agent import DriverCodeAgent
-from agents.problem_validator_agent import ProblemValidatorAgent
 
 
 LANGUAGES = ["cpp", "java", "python"]
@@ -102,28 +101,6 @@ def read_topics(path: str) -> list:
     else:
         print(f"[main] Topic tags loaded ({len(tags)}): {', '.join(tags)}")
     return tags
-
-
-def validate_problem(problem_text: str) -> None:
-    """
-    Step 0: gate the pipeline on a well-formed problem statement.
-    Aborts the process with a non-zero exit code if the validator finds defects.
-    """
-    print("\n--- Step 0: Validate Problem Statement ---")
-    result = ProblemValidatorAgent().run(problem_text)
-    if result.valid:
-        print(f"[main] Problem statement OK. {result.summary}")
-        return
-
-    print("[ERROR] Problem statement failed validation.")
-    if result.summary:
-        print(f"  Summary: {result.summary}")
-    if result.issues:
-        print("  Issues:")
-        for i, issue in enumerate(result.issues, 1):
-            print(f"    {i}. {issue}")
-    print("\nFix the problem statement (constraints, input/output format, examples) and re-run.")
-    sys.exit(1)
 
 
 # Languages that only generate code (no compile/run)
@@ -307,8 +284,6 @@ def main() -> None:
     lang_available = validate_environment()
     problem_text = read_problem(args)
     topics = read_topics(args.topics)
-
-    validate_problem(problem_text)
 
     results = run_pipeline(
         problem_text,
