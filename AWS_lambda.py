@@ -53,11 +53,12 @@ def _collect_driver_codes(output_dir):
         "c":      "driver.c",
         "python": "driver.py"
     }
-    return {
-        lang: open(os.path.join(driver, f)).read()
-        if os.path.exists(os.path.join(driver, f)) else None
-        for lang, f in files.items()
-    }
+    result = {}
+    for lang, f in files.items():
+        path = os.path.join(driver, f)
+        if os.path.exists(path):
+            result[lang] = open(path).read()
+    return result
 
 
 def push(question_id: str, callback_url: str = None, tenant_id: str = "", output_dir: str = "output"):
